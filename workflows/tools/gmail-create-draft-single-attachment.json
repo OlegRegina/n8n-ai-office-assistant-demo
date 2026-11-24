@@ -1,0 +1,411 @@
+{
+  "name": "📧TOOL — Gmail Create Draft — Single Attachment",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Werkzeug: Neuer E-Mail-Entwurf mit einem Anhang\nErstellt einen Entwurf in Gmail, optional mit einer Datei aus Google Drive als Anhang.\nGesendet wird nichts: Senden nur über gmail_send_draft nach Freigabe in Telegram.",
+        "height": 752,
+        "width": 1664,
+        "color": "#0B0909"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -192,
+        -1984
+      ],
+      "typeVersion": 1,
+      "id": "01d57703-a526-43b9-a10c-304cc6929a8d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "to"
+            },
+            {
+              "name": "subject"
+            },
+            {
+              "name": "body"
+            },
+            {
+              "name": "file_id"
+            },
+            {
+              "name": "request_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -416,
+        -832
+      ],
+      "id": "f7c38d55-d0ef-43f0-aa71-adeeb0aeab8d",
+      "name": "🚪 When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const requestId = String(item.json.request_id ?? '').trim();\n\n  if (!requestId) {\n    throw new Error('Missing request_id: draft creation blocked');\n  }\n\n  return {\n    json: {\n      ...item.json,\n      draft_key: `gmail_draft:${requestId}`\n    },\n    binary: item.binary\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        -832
+      ],
+      "id": "6d87dcda-38bb-4b1b-a84b-42ab98b46a25",
+      "name": "🔑 CODE — Build Draft Key"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "AI_DRAFT_REGISTRY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "draft_key",
+              "keyValue": "={{ $json.draft_key }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        -832
+      ],
+      "id": "19926e21-bb9f-4375-9fda-e31d8487c716",
+      "name": "🗄️ DB — Find Existing Draft",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    already_exists: true,\n    created: false,\n    draft_key: row.draft_key,\n    draft_id: row.draft_id,\n    message: 'Draft already exists. No new Gmail draft created.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        -1024
+      ],
+      "id": "371d23a0-6dbf-4d94-8467-2cf62090ee07",
+      "name": "⚠️ RESULT — Draft Already Exists"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d66daa85-311b-474a-9320-3ec60f058664",
+              "leftValue": "={{ $json.draft_id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        272,
+        -704
+      ],
+      "id": "882680d4-ee5a-4cbb-b89b-8cb726958b79",
+      "name": "🚦 IF — Draft Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "AI_DRAFT_REGISTRY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "draft_key",
+              "keyValue": "={{ $('🔑 CODE — Build Draft Key').first().json.draft_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "draft_key": "={{ $('🔑 CODE — Build Draft Key').first().json.draft_key }}",
+            "status": "CREATED",
+            "draft_id": "={{ $json.id }}",
+            "recipient": "={{ $('🚪 When Executed by Another Workflow').first().json.to }}",
+            "subject": "={{ $('🚪 When Executed by Another Workflow').first().json.subject }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "draft_key",
+              "displayName": "draft_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "draft_id",
+              "displayName": "draft_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "recipient",
+              "displayName": "recipient",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        -736
+      ],
+      "id": "7a6e2a7b-5305-4d41-a8b9-f5a23df65fe9",
+      "name": "💾 DB — Save Created Draft",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('🚪 When Executed by Another Workflow').first().json.subject }}",
+        "message": "={{ $('🚪 When Executed by Another Workflow').first().json.body }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          },
+          "sendTo": "={{ $('🚪 When Executed by Another Workflow').first().json.to }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        -736
+      ],
+      "id": "4bbb7cfe-178e-4bf2-9971-2f4d9b2596c4",
+      "name": "✉️ Create a Draft"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst extByMime = {\n  'application/pdf': 'pdf',\n  'text/plain': 'txt',\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',\n};\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n\n  if (!item.binary?.data) {\n    throw new Error('Missing binary field: data');\n  }\n\n  const buffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n\n  if (buffer.length === 0) {\n    throw new Error('Empty binary file: data');\n  }\n\n  const mimeType = item.binary.data.mimeType;\n  let fileName = String(item.binary.data.fileName || 'attachment').trim();\n  const ext = extByMime[mimeType];\n\n  if (ext && !fileName.toLowerCase().endsWith('.' + ext)) {\n    fileName += '.' + ext;\n  }\n\n  item.binary.data = await this.helpers.prepareBinaryData(buffer, fileName, mimeType);\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -592
+      ],
+      "id": "7cb21a7d-c1d6-4724-b386-b926e13c8ca1",
+      "name": "Verify Binary Attachments"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('🚪 When Executed by Another Workflow').item.json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        544,
+        -592
+      ],
+      "id": "16421ed5-df33-4bce-9bf9-19b82b4a63d3",
+      "name": "📥 Download File"
+    }
+  ],
+  "connections": {
+    "🚪 When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "🔑 CODE — Build Draft Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔑 CODE — Build Draft Key": {
+      "main": [
+        [
+          {
+            "node": "🗄️ DB — Find Existing Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ DB — Find Existing Draft": {
+      "main": [
+        [
+          {
+            "node": "🚦 IF — Draft Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚦 IF — Draft Exists?": {
+      "main": [
+        [
+          {
+            "node": "⚠️ RESULT — Draft Already Exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📥 Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✉️ Create a Draft": {
+      "main": [
+        [
+          {
+            "node": "💾 DB — Save Created Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Binary Attachments": {
+      "main": [
+        [
+          {
+            "node": "✉️ Create a Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚠️ RESULT — Draft Already Exists": {
+      "main": [
+        []
+      ]
+    },
+    "📥 Download File": {
+      "main": [
+        [
+          {
+            "node": "Verify Binary Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoGmailDraft01",
+  "pinData": {},
+  "active": false
+}

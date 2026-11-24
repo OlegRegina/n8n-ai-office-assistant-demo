@@ -1,0 +1,322 @@
+{
+  "name": "📧TOOL — Gmail Search Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -80
+      ],
+      "id": "608da99b-93b6-4075-a4ac-1876f5aa7251",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "33253f1a-d835-4589-81a4-63d1fe24928d",
+              "name": "message_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "42110b7a-07d7-4a1e-b20f-49ccedec5dff",
+              "name": "thread_id",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            },
+            {
+              "id": "a53bd049-a113-4eeb-86c8-6adeebbb79ad",
+              "name": "from",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "fcb21157-769a-4af5-82fb-5a9e722c5a90",
+              "name": "subject",
+              "value": "={{ $json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "634179d3-16fe-412f-9e47-c80d7bdb8053",
+              "name": "snippet",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "a2ca8d75-cfaf-4a4e-8c8b-2d8242e1e04f",
+              "name": "date",
+              "value": "={{  DateTime.fromMillis(Number($json.internalDate)).setZone('Europe/Zurich').toFormat('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "217c311b-1c82-463a-8117-7108c0948e26",
+              "name": "is_draft",
+              "value": "={{ ($json.labels ?? []).some(l => l.id === 'DRAFT') }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        208,
+        -512
+      ],
+      "id": "075d5760-d6bc-442d-bd18-53cf639dea9a",
+      "name": "Prepare Search Results"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 5,
+        "filters": {
+          "q": "={{ 'in:anywhere ' + $json.query }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        -240
+      ],
+      "id": "e1e072c7-9f39-423d-ae02-dc0dc958b5e3",
+      "name": "GMAIL — Search Messages",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "# Werkzeug: Suche in Gmail\nEingabe: query (Gmail-Suchsyntax, z. B. from:anna.muster@example.com newer_than:7d)\nGesucht wird in allen Ordnern (in:anywhere). Leere Anfrage oder keine Treffer → klare Meldung an den Assistenten.\nNur lesend.",
+        "height": 432,
+        "width": 768
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -832
+      ],
+      "typeVersion": 1,
+      "id": "9358057a-e3ce-46e7-9ac6-9c4c065457c8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ee5d90d2-fc7d-4c81-b3cf-762a72d42f9f",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        -176
+      ],
+      "id": "a041845d-dccd-4a0f-8e85-637d2b5b1966",
+      "name": "IF — Messages Found?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3382db19-87b0-498a-8527-ec0e06596ad2",
+              "leftValue": "={{ $json.query?.trim() || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -480,
+        -80
+      ],
+      "id": "03f9a890-21b1-42de-ab72-ac08924244a4",
+      "name": "IF — Search Query Valid?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93c03c3b-0f37-4f2b-b9f7-87251f0d67f9",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "ffecea16-c9f4-4ae8-a65f-834205af2889",
+              "name": "status",
+              "value": "invalid_query",
+              "type": "string"
+            },
+            {
+              "id": "ce17ac4d-2d1d-4137-84be-6bc898ed7280",
+              "name": "message",
+              "value": "Suche nicht ausgeführt: Die Suchanfrage fehlt.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -208,
+        96
+      ],
+      "id": "72402fc4-4a1b-4964-a8eb-07ac7625327b",
+      "name": "RESULT — Invalid Search Query"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93c03c3b-0f37-4f2b-b9f7-87251f0d67f9",
+              "name": "found",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "ffecea16-c9f4-4ae8-a65f-834205af2889",
+              "name": "status",
+              "value": "no_messages_found",
+              "type": "string"
+            },
+            {
+              "id": "ce17ac4d-2d1d-4137-84be-6bc898ed7280",
+              "name": "message",
+              "value": "Zu dieser Suchanfrage wurden keine Gmail-Nachrichten gefunden.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        208,
+        112
+      ],
+      "id": "dcb9605a-cdf4-49fa-85a3-8997abde0d0a",
+      "name": "RESULT — No Messages Found"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "IF — Search Query Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GMAIL — Search Messages": {
+      "main": [
+        [
+          {
+            "node": "IF — Messages Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Messages Found?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — No Messages Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Search Query Valid?": {
+      "main": [
+        [
+          {
+            "node": "GMAIL — Search Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — Invalid Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoGmailSearch1",
+  "pinData": {},
+  "active": false
+}

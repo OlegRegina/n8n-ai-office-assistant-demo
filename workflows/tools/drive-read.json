@@ -1,0 +1,151 @@
+{
+  "name": "📁TOOL — Drive Read",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "file_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        -464
+      ],
+      "id": "ac47438e-e53a-44cd-bde4-05c655b5f2ed",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        -272
+      ],
+      "id": "0ba51cf5-6fc4-43a5-a72d-1e49abe29053",
+      "name": "Download file"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        -288
+      ],
+      "id": "8c973f72-830d-4559-86b8-a3c8f80d0914",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a779d753-4be3-40d2-a9f1-2bd3e91e60d3",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "ce07a5ab-23dd-4b76-aa1a-3a3d5c2ac6ad",
+              "name": "pages",
+              "value": "={{ $json.numpages }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        320,
+        -512
+      ],
+      "id": "cb7c12d9-4071-41a5-bac0-8ddf87c3885e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "# Werkzeug: Dokument aus Google Drive lesen\nEingabe: file_id\nAblauf: Datei laden → Google Docs bei Bedarf als PDF → Text auslesen → nur Text und Seitenzahl an den Assistenten.\nAusgabe: text, pages\nTabellen und Präsentationen werden nicht unterstützt. Nur lesend.",
+        "height": 352,
+        "width": 688,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -784,
+        -1216
+      ],
+      "typeVersion": 1,
+      "id": "6fa77fe6-483e-4d37-8f77-4404307c4588",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoDriveRead001",
+  "pinData": {},
+  "active": false
+}

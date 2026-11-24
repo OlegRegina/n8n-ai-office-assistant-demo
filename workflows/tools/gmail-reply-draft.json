@@ -1,0 +1,550 @@
+{
+  "name": "📧TOOL — Gmail Reply Draft V2",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "to"
+            },
+            {
+              "name": "subject"
+            },
+            {
+              "name": "body"
+            },
+            {
+              "name": "thread_id"
+            },
+            {
+              "name": "file_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -176
+      ],
+      "id": "c64be43e-67b4-4ef7-9e9a-845a34029d9c",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "content": "# Werkzeug: Antwortentwurf\nEingabe: to, subject, body, thread_id (optional)\nMit thread_id: Entwurf als Antwort in der bestehenden Unterhaltung; ohne: neuer Entwurf.\nFehlen Pflichtangaben, wird nichts erstellt. Gesendet wird nichts.",
+        "height": 1424,
+        "width": 512,
+        "color": "#14100B"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -560,
+        -992
+      ],
+      "typeVersion": 1,
+      "id": "fb6ef28e-dd68-49b9-8354-926d11def1ae",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('When Executed by Another Workflow').item.json.subject }}",
+        "message": "={{ $('When Executed by Another Workflow').item.json.body }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          },
+          "threadId": "={{ $('When Executed by Another Workflow').item.json.thread_id }}",
+          "sendTo": "={{ $('When Executed by Another Workflow').item.json.to }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        -496
+      ],
+      "id": "b6a41f8d-4b1e-48cb-8aab-cfc16ec614e6",
+      "name": "GMAIL — Reply Draft"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {
+          "sendTo": "={{ $json.to }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        64
+      ],
+      "id": "34177093-1955-43f5-8235-8b3c6c7a3bad",
+      "name": "GMAIL — New Draft"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b3d17544-e409-4764-b757-d9decb0fbf32",
+              "leftValue": "={{ $json.to }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0068837a-3d84-45c4-9f6c-393f466ff8b0",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "b3f4a849-2ec0-4bb1-b205-7a81a2c0e619",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        -176
+      ],
+      "id": "d85e23f6-1d75-44d7-aeae-08b35f742544",
+      "name": "IF — Validate Draft Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4bb9a612-8d0e-4625-b13b-6f67c9f86c4c",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "ae326b3e-512d-445d-a636-973b2d7410f4",
+              "name": "status",
+              "value": "validation_failed",
+              "type": "string"
+            },
+            {
+              "id": "189db16b-0f13-4593-aeac-2fa9ac7ba6ff",
+              "name": "message",
+              "value": "Kein Entwurf erstellt. Empfänger, Betreff und Text der E-Mail sind nötig.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        592,
+        32
+      ],
+      "id": "d93e1936-8dd2-4fb4-977b-dfc6d895a3ea",
+      "name": "RESULT — Invalid Draft Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4bb9a612-8d0e-4625-b13b-6f67c9f86c4c",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "ae326b3e-512d-445d-a636-973b2d7410f4",
+              "name": "status",
+              "value": "draft_created",
+              "type": "string"
+            },
+            {
+              "id": "189db16b-0f13-4593-aeac-2fa9ac7ba6ff",
+              "name": "message",
+              "value": "Antwortentwurf erstellt. Die E-Mail wurde nicht gesendet.",
+              "type": "string"
+            },
+            {
+              "id": "875ceec1-2cea-4a8e-bf5d-acd465eb05ba",
+              "name": "draft_type",
+              "value": "reply",
+              "type": "string"
+            },
+            {
+              "id": "d7b37527-393b-49b6-a9d8-00dd69aaae54",
+              "name": "draft_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1600,
+        -384
+      ],
+      "id": "d4fa0087-352d-4c7f-807b-a80c0e7212fc",
+      "name": "RESULT — Reply Draft Created"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4bb9a612-8d0e-4625-b13b-6f67c9f86c4c",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "ae326b3e-512d-445d-a636-973b2d7410f4",
+              "name": "status",
+              "value": "draft_created",
+              "type": "string"
+            },
+            {
+              "id": "189db16b-0f13-4593-aeac-2fa9ac7ba6ff",
+              "name": "message",
+              "value": "Neuer Entwurf erstellt. Die E-Mail wurde nicht gesendet.",
+              "type": "string"
+            },
+            {
+              "id": "875ceec1-2cea-4a8e-bf5d-acd465eb05ba",
+              "name": "draft_type",
+              "value": "new",
+              "type": "string"
+            },
+            {
+              "id": "d7b37527-393b-49b6-a9d8-00dd69aaae54",
+              "name": "draft_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1280,
+        64
+      ],
+      "id": "c7d6ec51-f4d9-48bc-b491-94bb685b0fe2",
+      "name": "RESULT — New Draft Created"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ed1745a-ad8b-4599-bdbe-fa0a68d79c4b",
+              "leftValue": "={{ $json.thread_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        -368
+      ],
+      "id": "1893bbf9-5b3f-4410-81cb-2610843cb418",
+      "name": "IF — Thread ID Exists?"
+    },
+    {
+      "parameters": {
+        "content": "Senden ist nur über gmail_send_draft nach Freigabe in Telegram möglich.",
+        "height": 240,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        -976
+      ],
+      "typeVersion": 1,
+      "id": "8d462c0e-f6df-4875-a9c8-c496cda9d1d5",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst extByMime = {\n  'application/pdf': 'pdf',\n  'text/plain': 'txt',\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',\n};\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n\n  if (!item.binary?.data) {\n    throw new Error('Missing binary field: data');\n  }\n\n  const buffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n\n  if (buffer.length === 0) {\n    throw new Error('Empty binary file: data');\n  }\n\n  const mimeType = item.binary.data.mimeType;\n  let fileName = String(item.binary.data.fileName || 'attachment').trim();\n  const ext = extByMime[mimeType];\n\n  if (ext && !fileName.toLowerCase().endsWith('.' + ext)) {\n    fileName += '.' + ext;\n  }\n\n  item.binary.data = await this.helpers.prepareBinaryData(buffer, fileName, mimeType);\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -576
+      ],
+      "id": "f76b200c-a894-490e-9e89-45105c4cdba4",
+      "name": "Verify Binary Attachments"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('When Executed by Another Workflow').item.json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        976,
+        -560
+      ],
+      "id": "6709f2b9-acab-4252-901d-c732d407c129",
+      "name": "📥 Download File"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ed1745a-ad8b-4599-bdbe-fa0a68d79c4b",
+              "leftValue": "={{ String($json.file_id ?? '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        -400
+      ],
+      "id": "f4487666-89d0-4f43-9054-21678ef8a9da",
+      "name": "IF — File ID Exists?"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('When Executed by Another Workflow').item.json.subject }}",
+        "message": "={{ $('When Executed by Another Workflow').item.json.body }}",
+        "options": {
+          "threadId": "={{ $('When Executed by Another Workflow').item.json.thread_id }}",
+          "sendTo": "={{ $('When Executed by Another Workflow').item.json.to }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        -240
+      ],
+      "id": "e0f9bc7f-9fb1-4b60-b577-56f9f8152568",
+      "name": "GMAIL — Reply Draft — No Attachment"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "IF — Validate Draft Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Validate Draft Input": {
+      "main": [
+        [
+          {
+            "node": "IF — Thread ID Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — Invalid Draft Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GMAIL — Reply Draft": {
+      "main": [
+        [
+          {
+            "node": "RESULT — Reply Draft Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GMAIL — New Draft": {
+      "main": [
+        [
+          {
+            "node": "RESULT — New Draft Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Thread ID Exists?": {
+      "main": [
+        [
+          {
+            "node": "IF — File ID Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GMAIL — New Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Download File": {
+      "main": [
+        [
+          {
+            "node": "Verify Binary Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Binary Attachments": {
+      "main": [
+        [
+          {
+            "node": "GMAIL — Reply Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — File ID Exists?": {
+      "main": [
+        [
+          {
+            "node": "📥 Download File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GMAIL — Reply Draft — No Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GMAIL — Reply Draft — No Attachment": {
+      "main": [
+        [
+          {
+            "node": "RESULT — Reply Draft Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoGmailReply01",
+  "pinData": {},
+  "active": false
+}

@@ -1,0 +1,21 @@
+Office Assistant Demo - validation report
+generated: 2026-11-24 16:18
+tool: scripts/validate.py
+workflows: 12 files in workflows/
+private sources: provided for comparison (not part of this repository; paths and hashes not recorded)
+personal deny tokens: 3 provided (values not recorded)
+note: automatic checks are not proof that no sensitive data remains; a manual review is required.
+
+PASS    S3    allowlist of keys respected (no credentials, webhookId, pinData)
+PASS    S6    12 workflows, nodes 111, edges 87; connections, $('…') references and tool references resolved
+PASS    S8    active=false, availableInMCP=false in all workflows
+PASS    S9    placeholders telegram/table/calendar = 1/2/6 (expected 1/2/6)
+PASS    S11   4 writing tools behind approval (calendar_create_event, calendar_update_event, calendar_delete_event, gmail_send_draft); 7 read/draft tools direct
+PASS    S12   sender filter directly after the Telegram trigger; foreign senders end without output
+PASS    S5    pattern scan of 34 files; no findings
+PASS    S10   13 synthetic messages; flagged synthetic, unique ids, example.com only
+PASS    S2b   repository files identical to a private source: 0
+PASS    S4    22 source values checked in 34 files; none found
+PASS    S7    workflows are exactly the output of scripts/sanitize.py on the private sources
+
+result: PASS (0 failed checks)

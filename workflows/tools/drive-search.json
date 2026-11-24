@@ -1,0 +1,179 @@
+{
+  "name": "📁TOOL — Drive Search",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ee9b6013-3201-404e-8cfb-45332fd1116d",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "= {{ \"trashed = false and (mimeType = 'application/pdf' or mimeType = 'application/vnd.google-apps.document') and name contains '\" + String($json.query ?? \"\").trim().replace(/\\\\/g, \"\\\\\\\\\").replace(/'/g, \"\\\\'\") + \"'\" }}",
+        "filter": {},
+        "options": {
+          "fields": [
+            "id",
+            "mimeType",
+            "name",
+            "webViewLink"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        432,
+        -208
+      ],
+      "id": "c7eb39b2-ccf8-455b-91ce-8ea14d08be65",
+      "name": "Search files and folders",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst files = items\n  .map(item => item.json)\n  .filter(file => file.id && file.name);\n\nreturn [\n  {\n    json: {\n      success: true,\n      found: files.length > 0,\n      count: files.length,\n      files,\n      message: files.length > 0\n        ? `Found ${files.length} file(s)`\n        : 'No matching files found in Google Drive'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -272
+      ],
+      "id": "429aa09d-755b-4a40-9616-e85762ed268f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "# Werkzeug: Suche in Google Drive\nEingabe: query (Name oder Teil des Namens)\nSuche über die Google-Drive-API nach dem Dateinamen: PDF und Google Docs, ohne Papierkorb.\nAusgabe: id, name, mimeType, webViewLink\nLeere Anfrage → Meldung EMPTY_QUERY. Nur lesend.",
+        "height": 1296,
+        "width": 400,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -496,
+        -768
+      ],
+      "typeVersion": 1,
+      "id": "87c190d6-68e1-40eb-8961-7a48f10ef71c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7d4fa631-c5b4-438f-b679-ecc69ce68706",
+              "leftValue": "={{ String($json.query ?? '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "391cb01b-7584-4e88-a236-fc232ac5db6a",
+      "name": "IF — Check Query"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"success\": false,\n  \"found\": false,\n  \"count\": 0,\n  \"files\": [],\n  \"error_code\": \"EMPTY_QUERY\",\n  \"message\": \"Search query is empty. Please specify a filename or search phrase.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        96
+      ],
+      "id": "6c078272-cd2a-4fd2-83f9-387e0813a6db",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "IF — Check Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Check Query": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoDriveSearch1",
+  "pinData": {},
+  "active": false
+}

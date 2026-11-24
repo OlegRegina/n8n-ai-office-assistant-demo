@@ -1,0 +1,278 @@
+{
+  "name": "📧TOOL — Gmail Read Message",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "message_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -32
+      ],
+      "id": "8875c60c-ff09-41e4-a161-d7a9b2615b8e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.message_id }}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        -272
+      ],
+      "id": "3e883f6c-0d9d-4f0f-8677-691a03268a02",
+      "name": "Get a message",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "670a68f9-73e1-4cf5-8c25-938b3492ba53",
+              "name": "message_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "57131b68-c1aa-44f6-997c-aaf0b7cfe2bf",
+              "name": "thread_id",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            },
+            {
+              "id": "a12b9fa4-f59c-43cf-8081-553f4580fe65",
+              "name": "from",
+              "value": "={{ String($json.from?.text || $json.headers?.from || '').replace(/^From:\\s*/i, '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "c2951dc3-ea62-4bfe-87a2-e707f44886ab",
+              "name": "to",
+              "value": "={{ String($json.to?.text || $json.headers?.to || '').replace(/^To:\\s*/i, '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "3f8830e3-c1b7-48d8-86f2-60b7ae5dfa05",
+              "name": "subject",
+              "value": "={{ $json.headers?.subject || $json.Subject || $json.subject || '' }}\n",
+              "type": "string"
+            },
+            {
+              "id": "d64262ae-608f-433f-a49a-a22fa6a67edb",
+              "name": "date",
+              "value": "={{ DateTime.fromJSDate(new Date(String($json.headers?.date ?? '').replace(/^Date:\\s*/i, '').replace(/\\s*\\(.*\\)\\s*$/, ''))).setZone('Europe/Zurich').toFormat('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "25b66da1-a90c-4e4c-b23a-412230e607bd",
+              "name": "body_text",
+              "value": "={{ String($json.text || $json.textAsHtml || $json.html || '').replace(/<[^>]*>/g, ' ').replace(/https?:\\/\\/\\S+/g, '[Link]').replace(/\\s+/g, ' ').trim().slice(0, 6000) }}",
+              "type": "string"
+            },
+            {
+              "id": "c9ca3d01-8dcd-4750-aeaa-c963608d7764",
+              "name": "has_attachments",
+              "value": "={{ Object.keys($binary ?? {}).length > 0 }}",
+              "type": "boolean"
+            },
+            {
+              "id": "b8967872-6c6d-4db2-a26c-8a09b6af6f01",
+              "name": "attachment_count",
+              "value": "={{ Object.keys($binary ?? {}).length }}",
+              "type": "number"
+            },
+            {
+              "id": "80c31ca2-e6e1-44f1-a37f-7fea33b1486f",
+              "name": "attachments",
+              "value": "={{ Object.entries($binary ?? {}).map(([binary_property, file]) => ({   binary_property,   filename: file.fileName || '',   mime_type: file.mimeType || '',   file_extension: file.fileExtension || '',   size: file.fileSize || '' })) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        512,
+        -416
+      ],
+      "id": "806ea527-deff-40b4-ac22-2e8d8371c979",
+      "name": "Prepare Read Result"
+    },
+    {
+      "parameters": {
+        "content": "# Werkzeug: E-Mail lesen\nEingabe: message_id\nAusgabe: die wichtigsten Felder der E-Mail und ihr Text (Links als [Link], höchstens 6000 Zeichen).\nNur lesend.",
+        "height": 480,
+        "width": 1312
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -448,
+        -1120
+      ],
+      "typeVersion": 1,
+      "id": "1b415e2c-8ca1-4886-a76f-334bb11afe96",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93c03c3b-0f37-4f2b-b9f7-87251f0d67f9",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "ffecea16-c9f4-4ae8-a65f-834205af2889",
+              "name": "status",
+              "value": "invalid_query",
+              "type": "string"
+            },
+            {
+              "id": "ce17ac4d-2d1d-4137-84be-6bc898ed7280",
+              "name": "message",
+              "value": "Suche nicht ausgeführt: Die Suchanfrage fehlt.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        304,
+        176
+      ],
+      "id": "14d64cc1-0982-43bb-b1a9-0361f3ce5e2b",
+      "name": "RESULT — Invalid Search Query"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3382db19-87b0-498a-8527-ec0e06596ad2",
+              "leftValue": "={{ $json.message_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -16,
+        -96
+      ],
+      "id": "1d2b0a65-3495-490f-a0c4-5d0fdac0c800",
+      "name": "IF — Message ID Valid?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dekodiert MIME-Wörter im Betreff: =?UTF-8?B?...?= und =?UTF-8?Q?...?=\nconst item = $input.first().json;\n\nfunction decodeMime(str) {\n  return String(str ?? '')\n    .replace(/^Subject:\\s*/i, '')\n    .replace(/\\?=\\s+=\\?/g, '?==?')\n    .replace(/=\\?([^?]+)\\?([bBqQ])\\?([^?]*)\\?=/g, (m, charset, enc, text) => {\n      try {\n        const buf = enc.toUpperCase() === 'B'\n          ? Buffer.from(text, 'base64')\n          : Buffer.from(\n              text.replace(/_/g, ' ').replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16))),\n              'latin1'\n            );\n        return buf.toString('utf8');\n      } catch (e) {\n        return m;\n      }\n    })\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nreturn [{ json: { ...item, subject: decodeMime(item.subject) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -416
+      ],
+      "id": "894ab815-02a5-42c3-a85e-3527518c5c8e",
+      "name": "Decode Subject"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "IF — Message ID Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Prepare Read Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Message ID Valid?": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — Invalid Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Read Result": {
+      "main": [
+        [
+          {
+            "node": "Decode Subject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoGmailRead001",
+  "pinData": {},
+  "active": false
+}

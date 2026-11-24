@@ -1,0 +1,87 @@
+{
+  "name": "📧TOOL — Gmail Send Draft",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Werkzeug: Entwurf senden\nSendet einen bestehenden Gmail-Entwurf über seine draft_id (drafts.send); Anhänge bleiben erhalten.\nWird nur nach der Freigabe in Telegram aufgerufen (APPROVAL — Gmail Send). Ohne Ihr Ja wird nichts gesendet.",
+        "height": 752,
+        "width": 1664,
+        "color": "#0B0909"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -256,
+        -1632
+      ],
+      "typeVersion": 1,
+      "id": "e8fcbd7f-6a0c-4885-bee6-b35e9c290a6d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "draft_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        -672
+      ],
+      "id": "423802b9-a6f1-4d36-8a8d-2abd7b4cf99d",
+      "name": "🚪 When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/drafts/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $json.draft_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        -672
+      ],
+      "id": "5bad1b90-a582-44af-ab61-b0e95ddbddb2",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "🚪 When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoGmailSend001",
+  "pinData": {},
+  "active": false
+}

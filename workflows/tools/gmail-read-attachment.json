@@ -1,0 +1,601 @@
+{
+  "name": "📧TOOL — Gmail Read Attachment",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "message_id"
+            },
+            {
+              "name": "attachment_index",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        -1024
+      ],
+      "id": "88ad8784-6b8d-4e32-80e5-7449cb43939b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "136037f9-eabc-46e7-bd4d-484188553f77",
+              "leftValue": "={{ $json.message_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "04e89908-781a-4147-aa6a-2b073ad679e4",
+              "leftValue": "={{ $json.attachment_index }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -1024
+      ],
+      "id": "ad391a15-5b15-408d-bf2c-50a4a559eee8",
+      "name": "IF — Attachment Request Valid?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b69236de-a4b0-41d1-a483-ba3eb362f924",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "9a58b06e-7e0b-4b2a-be3b-474a79d16699",
+              "name": "error",
+              "value": "message_id is required and attachment_index must be 0 or greater",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        304,
+        -928
+      ],
+      "id": "0cff0f6f-4af9-423e-9078-67f12f3f69f0",
+      "name": "RESULT — Invalid Attachment Request"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.message_id }}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        -1120
+      ],
+      "id": "d260a040-ac26-4d29-96d7-538db3eba622",
+      "name": "Gmail — Get Message With Attachments"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst request = $('Normalize Attachment Request').first().json;\n\nconst attachmentIndex = Number(request.attachment_index);\nconst binaryProperty = `attachment_${attachmentIndex}`;\nconst selectedFile = item.binary?.[binaryProperty];\n\nif (!selectedFile) {\n  return [{\n    json: {\n      success: false,\n      error: `Attachment index ${attachmentIndex} was not found`,\n      message_id: request.message_id,\n      attachment_index: attachmentIndex,\n      available_attachments: Object.keys(item.binary ?? {}),\n    },\n  }];\n}\n\nreturn [{\n  json: {\n    success: true,\n    message_id: request.message_id,\n    attachment_index: attachmentIndex,\n    source_binary_property: binaryProperty,\n    filename: selectedFile.fileName ?? '',\n    mime_type: selectedFile.mimeType ?? '',\n    file_extension: selectedFile.fileExtension ?? '',\n    size: selectedFile.fileSize ?? '',\n  },\n  binary: {\n    attachment: selectedFile,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        -1120
+      ],
+      "id": "2baef5a6-d8b7-4833-8eaa-69832ec7cc1d",
+      "name": "Select Requested Attachment"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a762c1be-1bc5-4ef4-90cd-e710ab549962",
+              "name": "message_id",
+              "value": "={{ String($json.message_id ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "099e4b7b-0a61-4729-8ca9-aff38ab6a629",
+              "name": "attachment_index",
+              "value": "={{ Number($json.attachment_index ?? 0) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -144,
+        -1024
+      ],
+      "id": "c735018e-6c52-4df4-bc6d-8b352862772e",
+      "name": "Normalize Attachment Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "04e89908-781a-4147-aa6a-2b073ad679e4",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        -1120
+      ],
+      "id": "b55788e5-42f4-4cf2-bde9-5f751a65bda7",
+      "name": "IF — Attachment Found?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "37de0c2c-61d5-4a81-add4-d22be051ab2d",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "1aec2788-e2b8-4058-83cc-1778d9e39f9b",
+              "name": "error",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            },
+            {
+              "id": "3ad2f4e4-c042-499d-b529-90a55c7d6e3d",
+              "name": "message_id",
+              "value": "={{ $json.message_id }}",
+              "type": "string"
+            },
+            {
+              "id": "1469dcfc-3e78-45f8-81f3-54d24bab3eb5",
+              "name": "attachment_index",
+              "value": "={{ $json.attachment_index }}",
+              "type": "number"
+            },
+            {
+              "id": "5690e6da-794d-42f4-bc6e-084409726d12",
+              "name": "available_attachments",
+              "value": "={{ $json.available_attachments }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        832,
+        -816
+      ],
+      "id": "7c3a83b4-e640-43ad-a217-3ca31b2e0ce0",
+      "name": "RESULT — Attachment Not Found"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "=application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "80a362df-8a8a-4fb4-a241-5b124fba420a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DOCX"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7c56491a-f830-4879-a548-1baf4b5b1d4f",
+                    "leftValue": "={{ $json.mime_type }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        976,
+        -1248
+      ],
+      "id": "b3b81e6a-205d-4b91-8a01-9fc338724388",
+      "name": "Switch — Attachment Type"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst file = item.binary?.attachment;\n\nif (!file) {\n  throw new Error('Binary property \"attachment\" is missing');\n}\n\nconst originalName = file.fileName ?? 'document.docx';\nconst archiveName = originalName.replace(/\\.docx$/i, '') + '.zip';\n\nreturn [{\n  json: item.json,\n  binary: {\n    archive: {\n      ...file,\n      fileName: archiveName,\n      fileExtension: 'zip',\n      mimeType: 'application/zip',\n    },\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        -1424
+      ],
+      "id": "3f97c1c0-0a26-4348-a9b0-78c604af9a85",
+      "name": "Prepare DOCX Archive"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "archive",
+        "outputPrefix": "docx_"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        -1232
+      ],
+      "id": "2d21cd7d-0366-485a-8537-a22e06fb48e9",
+      "name": "Decompress DOCX"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst entries = Object.entries(item.binary ?? {});\n\nfunction getPath(file) {\n  return [file.directory, file.fileName]\n    .filter(Boolean)\n    .join('/')\n    .replace(/\\\\/g, '/')\n    .replace(/^\\/+/, '');\n}\n\nconst found = entries.find(([, file]) =>\n  getPath(file) === 'word/document.xml'\n);\n\nif (!found) {\n  return [{\n    json: {\n      ...item.json,\n      success: false,\n      error: 'word/document.xml was not found inside the DOCX archive',\n      available_docx_files: entries.map(([binary_property, file]) => ({\n        binary_property,\n        path: getPath(file),\n      })),\n    },\n  }];\n}\n\nconst [binaryProperty, documentXml] = found;\n\nreturn [{\n  json: {\n    ...item.json,\n    document_xml_property: binaryProperty,\n    document_xml_path: 'word/document.xml',\n  },\n  binary: {\n    document_xml: documentXml,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        -1232
+      ],
+      "id": "fa962789-f50e-43a8-a540-d26fcaf946e0",
+      "name": "Select DOCX Document XML"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract DOCX Text — reinen Text aus word/document.xml holen\nconst MAX_CHARS = 8000; // Grenze für den KI-Agenten\n\nconst item = $input.first();\n\n// 1. Binärdatei als Zeichenkette lesen\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'document_xml');\nconst xml = buffer.toString('utf8');\n\n// 2. Nur sichtbaren Text <w:t>, Tabs und Umbrüche nehmen – absatzweise\nconst decode = (s) => s\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>')\n  .replace(/&quot;/g, '\"').replace(/&apos;/g, \"'\")\n  .replace(/&amp;/g, '&');\n\nconst paragraphs = xml.split('</w:p>').map((p) =>\n  [...p.matchAll(/<w:t(?:\\s[^>]*)?>([^<]*)<\\/w:t>|<w:tab\\/>|<w:(?:br|cr)[^>]*\\/>/g)]\n    .map((m) => (m[1] !== undefined ? decode(m[1]) : m[0].startsWith('<w:tab') ? '\\t' : '\\n'))\n    .join('')\n);\n\nconst fullText = paragraphs.join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// 3. Leeres Dokument – ehrlich melden\nif (!fullText) {\n  return [{ json: { ...item.json, success: false, error: 'DOCX contains no readable text' } }];\n}\n\n// 4. Nur JSON zurückgeben, Binärdaten nicht weitergeben\nconst truncated = fullText.length > MAX_CHARS;\nreturn [{\n  json: {\n    ...item.json,\n    success: true,\n    text: fullText.slice(0, MAX_CHARS),\n    char_count: fullText.length,\n    truncated,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        -1232
+      ],
+      "id": "0be8bbe7-98aa-4c30-b7f1-edb763cc78d3",
+      "name": "Extract DOCX Text"
+    },
+    {
+      "parameters": {
+        "content": "# Werkzeug: Anhang einer E-Mail lesen\nEingabe: message_id, attachment_index\nAblauf: E-Mail mit Anhängen laden → gewünschten Anhang wählen → DOCX (Text aus word/document.xml) oder PDF (Text auslesen); andere Typen → Meldung «nicht unterstützt».\nAusgabe: success, message_id, attachment_index, filename, mime_type, text (höchstens 8000 Zeichen), char_count, truncated, error\nNur lesend: Es werden keine Dateien angelegt.",
+        "height": 736,
+        "width": 1600
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        240,
+        -2272
+      ],
+      "typeVersion": 1,
+      "id": "dce61042-9835-4242-a69d-89a14ec278b3",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// RESULT — DOCX Text: dem KI-Agenten nur die nützlichen Felder geben\nconst j = $input.first().json;\n\nreturn [{\n  json: {\n    success: j.success,\n    message_id: j.message_id,\n    attachment_index: j.attachment_index,\n    filename: j.filename,\n    mime_type: j.mime_type,\n    text: j.text ?? '',\n    char_count: j.char_count ?? 0,\n    truncated: j.truncated ?? false,\n    error: j.error ?? null,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        -1184
+      ],
+      "id": "9dc156ff-68ac-49b3-bf0d-2efc305dec89",
+      "name": "RESULT — DOCX Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// RESULT — Unsupported Type: ehrliche Antwort an den Agenten, wenn der Dateityp nicht unterstützt wird\nconst j = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message_id: j.message_id ?? null,\n    attachment_index: j.attachment_index ?? null,\n    filename: j.filename ?? null,\n    mime_type: j.mime_type ?? null,\n    text: '',\n    char_count: 0,\n    truncated: false,\n    error: 'Unsupported attachment type. Currently supported: DOCX.',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        -880
+      ],
+      "id": "df36549e-b226-4fb3-bd79-94fcda1a6afa",
+      "name": "RESULT — Unsupported Type"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        -1008
+      ],
+      "id": "3c0edeae-9adb-4413-85ee-befbf7360625",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// RESULT — PDF Text: dem KI-Agenten dieselben 9 Felder wie bei DOCX geben\nconst MAX_CHARS = 8000;\n\nconst meta = $('Switch — Attachment Type').first().json; // Daten der E-Mail und des Anhangs\nconst pdf = $input.first().json;                         // Ergebnis von Extract from File\n\nconst fullText = (pdf.text ?? '').trim();\n\nreturn [{\n  json: {\n    success: fullText.length > 0,\n    message_id: meta.message_id ?? null,\n    attachment_index: meta.attachment_index ?? null,\n    filename: meta.filename ?? null,\n    mime_type: meta.mime_type ?? null,\n    text: fullText.slice(0, MAX_CHARS),\n    char_count: fullText.length,\n    truncated: fullText.length > MAX_CHARS,\n    error: fullText.length > 0 ? null : 'PDF contains no readable text (possibly a scanned image)',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        -1008
+      ],
+      "id": "8cdb57ae-0896-420f-9d40-c1f027533fa0",
+      "name": "RESULT — PDF Text"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize Attachment Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Attachment Request Valid?": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Get Message With Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — Invalid Attachment Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Get Message With Attachments": {
+      "main": [
+        [
+          {
+            "node": "Select Requested Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Attachment Request": {
+      "main": [
+        [
+          {
+            "node": "IF — Attachment Request Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Requested Attachment": {
+      "main": [
+        [
+          {
+            "node": "IF — Attachment Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Attachment Found?": {
+      "main": [
+        [
+          {
+            "node": "Switch — Attachment Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — Attachment Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch — Attachment Type": {
+      "main": [
+        [
+          {
+            "node": "Prepare DOCX Archive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESULT — Unsupported Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare DOCX Archive": {
+      "main": [
+        [
+          {
+            "node": "Decompress DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decompress DOCX": {
+      "main": [
+        [
+          {
+            "node": "Select DOCX Document XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select DOCX Document XML": {
+      "main": [
+        [
+          {
+            "node": "Extract DOCX Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract DOCX Text": {
+      "main": [
+        [
+          {
+            "node": "RESULT — DOCX Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "RESULT — PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "demoGmailAttach1",
+  "pinData": {},
+  "active": false
+}
